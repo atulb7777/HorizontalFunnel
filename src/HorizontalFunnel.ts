@@ -24,7 +24,6 @@
  *  THE SOFTWARE.
  */
 
-// tslint:disable-next-line: no-namespace tslint:disable-next-line: no-internal-module
 module powerbi.extensibility.visual {
     // color
     import ILegend = powerbi.extensibility.utils.chart.legend.ILegend;
@@ -175,10 +174,8 @@ module powerbi.extensibility.visual {
         identity?: ISelectionId;
     }
     interface IValueViewModel {
-        // tslint:disable-next-line:no-any
         values: any;
     }
-    // tslint:disable-next-line:no-any
     const horizontalFunnelProps: any = {
         LabelSettings: {
             color: <DataViewObjectPropertyIdentifier>{ objectName: "labels", propertyName: "color" },
@@ -230,13 +227,11 @@ module powerbi.extensibility.visual {
         tooltipText: { objectName: "FunnelTitle", propertyName: "tooltipText" },
 
     };
-    // tslint:disable-next-line:no-any
     const sortType: any = [
         { value: "Auto", displayName: "Auto" },
         { value: "Series", displayName: "Series" },
         { value: "PrimaryMeasure", displayName: "Primary Measure" },
         { value: "SecondaryMeasure", displayName: "Secondary Measure" }];
-    // tslint:disable-next-line:no-any
     const orderType: any = [
         { value: "ascending", displayName: "Ascending", description: "Ascending" },
         { value: "descending", displayName: "Descending", description: "Descending" }];
@@ -630,10 +625,8 @@ module powerbi.extensibility.visual {
         private cardFormatSetting: ICardFormatSetting;
         private durationAnimations: number = 200;
         private selectionManager: ISelectionManager;
-        // tslint:disable-next-line:no-any
         private defaultDataPointColor: any = undefined;
         private tooltipInfoValue: string;
-        // tslint:disable-next-line:no-any
         private viewModel: any = undefined;
 
         constructor(options: VisualConstructorOptions) {
@@ -645,7 +638,6 @@ module powerbi.extensibility.visual {
             this.selectionManager = options.host.createSelectionManager();
             // function call to handle selections on bookmarks
             this.selectionManager.registerOnSelectCallback(() => {
-                // tslint:disable-next-line:no-any
                 const selection: any = this.root.selectAll(".hf_datapoint");
                 this.syncSelectionState(selection, <ISelectionId[]>this.selectionManager.getSelectionIds());
             });
@@ -745,7 +737,7 @@ module powerbi.extensibility.visual {
             }
         }
 
-        private dataViewMeta(dataViewMetadata, updateVar, dataView,defaultDataPointColor):any {
+        private dataViewMeta(dataViewMetadata, updateVar, dataView, defaultDataPointColor): any {
             if (dataViewMetadata) {
                 let objects: DataViewObjects = dataViewMetadata.objects;
                 if (objects) {
@@ -1031,7 +1023,7 @@ module powerbi.extensibility.visual {
                 updateVar.val += 2;
             }
         }
-        private endVisual(updateVar, evensvg, areafillheight,dataPoints,selection,options){
+        private endVisual(updateVar, evensvg, areafillheight, dataPoints, selection, options) {
             this.sideBar(updateVar, evensvg, areafillheight);
             this.root.selectAll(".fillcolor").style("fill", (d: {}, i: number) => this.colors[i + 1].value);
             this.root.selectAll(".hf_dataColor").style("fill", (d: {}, i: number) => this.viewModel.categories[i].color.value);
@@ -1056,94 +1048,98 @@ module powerbi.extensibility.visual {
                 }
             });
         }
-        // tslint:disable-next-line:cyclomatic-complexity
+
         public update(options: VisualUpdateOptions): void {
-            this.events.renderingStarted(options);
-            let host: IVisualHost;
-            host = this.host;
-            if (!options.dataViews || (options.dataViews.length < 1) || !options.dataViews[0] || !options.dataViews[0].categorical)
-                return;
-            let dataView: DataView = this.dataView = options.dataViews[0];
-            let ytot: number = 0, yarr: any = [], sKMBValueY1Axis: any, sKMBValueY2Axis: any, color: any, titlecolor: any, titlebgcolor: any, titleText: any, tooltiptext: any, defaultText: d3.Selection<SVGElement>, parentDiv: d3.Selection<SVGElement>;
-            let showDefaultText: number, viewport: IViewport, dataPoints: any, parentHeight: number, element: d3.Selection<SVGElement>, legendvalue: d3.Selection<SVGElement>, oddsvg: d3.Selection<SVGElement>, evensvg: d3.Selection<SVGElement>, selection: any;
-            let areafillheight: any = [], visualHeight: number, textHeight: number, titlemargin: number;
-            this.cardFormatSetting = this.getDefaultFormatSettings();
-            defaultText = this.root.select(".hf_defaultText");
-            let dataViewMetadata: DataViewMetadata = dataView.metadata, defaultDataPointColor: any;
-            let updateVar = {
-                labelSettings: null, precisionValue: 0, titleHeight: 0, titlefontsize: 0, funnelTitleOnOffStatus: false, parentWidth: 0, width: 0, catLength: 0, fontsize: 0, height: 0, percentageVal: [], ymax: 0,
-                legendpos: 0, title: "", displayunitValue: 0, displayunitValue2: 0, maxLabel: 0, displayValue: "", classname: "", index: 0, y: 0, val: 1, prevyheight: 0, nextyheight: 0, dimension: ""
-            };
-            defaultDataPointColor=this.dataViewMeta(dataViewMetadata, updateVar, dataView,defaultDataPointColor);
-            let showLegendProp: IShowLegendSettings = this.getLegendSettings(this.dataView), funnelTitleSettings: IFunnelTitle = this.getFunnelTitleSettings(this.dataView), showConnectorsProp: IShowConnectorsSettings = this.getConnectorsSettings(this.dataView), dataLabelSettings: ILabelSettings = this.getDataLabelSettings(this.dataView);
-            let sortSettings: ISortSettings = this.getSortSettings(this.dataView);
-            this.defaultDataPointColor = defaultDataPointColor;
-            viewport = options.viewport;
-            this.root.selectAll("div").remove();
-            dataPoints = HorizontalFunnel.CONVERTER(dataView, horizontalFunnelProps.cPalette, sortSettings.sortBy, sortSettings.orderBy, this.host);
-            this.viewModel = dataPoints[0];
-            updateVar.catLength = this.viewModel.categories.length;
-            updateVar.parentWidth = viewport.width;
-            parentHeight = viewport.height;
-            updateVar.width = updateVar.parentWidth / (1.4 * updateVar.catLength);
-            if (!showConnectorsProp.show) updateVar.width = updateVar.width + (((updateVar.width / 4) * (updateVar.catLength - 1)) / updateVar.catLength);
-            visualHeight = parentHeight >= 65 ? parentHeight - 65 + 40 : 65 - parentHeight;
-            for (let iLoop: number = 0; iLoop < this.viewModel.categories.length; iLoop++) {
-                yarr.push(this.viewModel.values[iLoop].values[0]);
-                ytot += this.viewModel.values[iLoop].values[0];
-                updateVar.ymax = Math.max.apply(Math, yarr);
+            try {
+                this.events.renderingStarted(options);
+                let host: IVisualHost;
+                host = this.host;
+                if (!options.dataViews || (options.dataViews.length < 1) || !options.dataViews[0] || !options.dataViews[0].categorical)
+                    return;
+                let dataView: DataView = this.dataView = options.dataViews[0];
+                let ytot: number = 0, yarr: any = [], sKMBValueY1Axis: any, sKMBValueY2Axis: any, color: any, titlecolor: any, titlebgcolor: any, titleText: any, tooltiptext: any, defaultText: d3.Selection<SVGElement>, parentDiv: d3.Selection<SVGElement>;
+                let showDefaultText: number, viewport: IViewport, dataPoints: any, parentHeight: number, element: d3.Selection<SVGElement>, legendvalue: d3.Selection<SVGElement>, oddsvg: d3.Selection<SVGElement>, evensvg: d3.Selection<SVGElement>, selection: any;
+                let areafillheight: any = [], visualHeight: number, textHeight: number, titlemargin: number;
+                this.cardFormatSetting = this.getDefaultFormatSettings();
+                defaultText = this.root.select(".hf_defaultText");
+                let dataViewMetadata: DataViewMetadata = dataView.metadata, defaultDataPointColor: any;
+                let updateVar = {
+                    labelSettings: null, precisionValue: 0, titleHeight: 0, titlefontsize: 0, funnelTitleOnOffStatus: false, parentWidth: 0, width: 0, catLength: 0, fontsize: 0, height: 0, percentageVal: [], ymax: 0,
+                    legendpos: 0, title: "", displayunitValue: 0, displayunitValue2: 0, maxLabel: 0, displayValue: "", classname: "", index: 0, y: 0, val: 1, prevyheight: 0, nextyheight: 0, dimension: ""
+                };
+                defaultDataPointColor = this.dataViewMeta(dataViewMetadata, updateVar, dataView, defaultDataPointColor);
+                let showLegendProp: IShowLegendSettings = this.getLegendSettings(this.dataView), funnelTitleSettings: IFunnelTitle = this.getFunnelTitleSettings(this.dataView), showConnectorsProp: IShowConnectorsSettings = this.getConnectorsSettings(this.dataView), dataLabelSettings: ILabelSettings = this.getDataLabelSettings(this.dataView);
+                let sortSettings: ISortSettings = this.getSortSettings(this.dataView);
+                this.defaultDataPointColor = defaultDataPointColor;
+                viewport = options.viewport;
+                this.root.selectAll("div").remove();
+                dataPoints = HorizontalFunnel.CONVERTER(dataView, horizontalFunnelProps.cPalette, sortSettings.sortBy, sortSettings.orderBy, this.host);
+                this.viewModel = dataPoints[0];
+                updateVar.catLength = this.viewModel.categories.length;
+                updateVar.parentWidth = viewport.width;
+                parentHeight = viewport.height;
+                updateVar.width = updateVar.parentWidth / (1.4 * updateVar.catLength);
+                if (!showConnectorsProp.show) updateVar.width = updateVar.width + (((updateVar.width / 4) * (updateVar.catLength - 1)) / updateVar.catLength);
+                visualHeight = parentHeight >= 65 ? parentHeight - 65 + 40 : 65 - parentHeight;
+                for (let iLoop: number = 0; iLoop < this.viewModel.categories.length; iLoop++) {
+                    yarr.push(this.viewModel.values[iLoop].values[0]);
+                    ytot += this.viewModel.values[iLoop].values[0];
+                    updateVar.ymax = Math.max.apply(Math, yarr);
+                }
+                updateVar.funnelTitleOnOffStatus = funnelTitleSettings.show;
+                titleText = funnelTitleSettings.titleText;
+                tooltiptext = funnelTitleSettings.tooltipText;
+                updateVar.titlefontsize = funnelTitleSettings.fontSize;
+                if (!updateVar.titlefontsize) updateVar.titlefontsize = 12;
+                if (updateVar.funnelTitleOnOffStatus && (titleText || tooltiptext)) {
+                    let titleTextProperties: TextProperties = { fontFamily: "Segoe UI,wf_segoe-ui_normal,helvetica,arial,sans-serif", fontSize: `${updateVar.titlefontsize}pt`, text: titleText.toString() };
+                    updateVar.titleHeight = textMeasurementService.measureSvgTextHeight(titleTextProperties);
+                } else updateVar.titleHeight = 0;
+                updateVar.fontsize = dataLabelSettings.fontSize;
+                let textProperties: TextProperties = { fontFamily: "Segoe UI,wf_segoe-ui_normal,helvetica,arial,sans-serif", fontSize: `${updateVar.fontsize}pt`, text: "MAQ Software" };
+                textHeight = textMeasurementService.measureSvgTextHeight(textProperties);
+                let totalTextHeight: number = updateVar.titleHeight + textHeight * 2;
+                updateVar.height = totalTextHeight > visualHeight ? totalTextHeight - visualHeight : visualHeight - totalTextHeight;
+                if (!this.viewModel.secondaryColumn) updateVar.height += (1.4 * updateVar.fontsize);
+                titlemargin = updateVar.titleHeight;
+                if (updateVar.titleHeight !== 0) {
+                    this.root.append("div").style({ height: `${updateVar.titleHeight}px`, width: "100%" }).classed("hf_Title_Div", true);
+                    this.root.select(".hf_Title_Div").append("div").style({ width: "100%" }).classed("hf_Title_Div_Text", true);
+                    this.root.select(".hf_Title_Div_Text").classed("hf_title", true).style({ display: "inline-block" });
+                    this.root.select(".hf_Title_Div_Text").classed("hf_title", true).style({ display: "inline-block" });
+                }
+                this.root.append("div").style({ "height": `${updateVar.height + 60}px`, "margin-bottom": "5px", "width": `${updateVar.parentWidth}px`, }).classed("hf_parentdiv", true);
+                element = this.root.select(".hf_parentdiv").append("div").classed("hf_svg hf_parentElement", true);
+                parentDiv = this.root.select(".hf_parentdiv"); showDefaultText = 1;
+                if (dataView && dataView.categorical && dataView.categorical.values) {
+                    for (const iterator of dataView.categorical.values)
+                        if (iterator.source.roles && iterator.source.roles.hasOwnProperty("primaryMeasure")) showDefaultText = 0;
+                }
+                if (!dataView.categorical.categories || 1 === showDefaultText) {
+                    let message: string;
+                    message = 'Please select both "Series" and "Primary Measure" values';
+                    parentDiv.append("div").text(message).attr("title", message).classed("hf_defaultText", true).style({ top: `${updateVar.height / 2.5}px` });
+                }
+                if (updateVar.labelSettings !== undefined && updateVar.labelSettings !== null) {
+                    updateVar.displayunitValue = (updateVar.labelSettings.displayUnits ? updateVar.labelSettings.displayUnits : 0);
+                    updateVar.displayunitValue2 = (updateVar.labelSettings.displayUnits ? updateVar.labelSettings.displayUnits : 0);
+                    color = updateVar.labelSettings.labelColor; updateVar.fontsize = updateVar.labelSettings.fontSize;
+                }
+                titlecolor = funnelTitleSettings.color;
+                titlebgcolor = funnelTitleSettings.bkColor;
+                element = this.caseTilteHeight(viewport, updateVar, titleText, tooltiptext, titlecolor, titlebgcolor, showLegendProp, element, textProperties, color);
+                this.printerloop(showLegendProp, showConnectorsProp, element, color, updateVar);
+                this.visualoop(legendvalue, dataPoints, updateVar, sKMBValueY1Axis, textProperties, sKMBValueY2Axis);
+                this.visualoop2(updateVar, oddsvg, areafillheight);
+                let svgElement: d3.Selection<SVGAElement> = d3.selectAll(".hf_datapoint.hf_dataColor");
+                for (let i: number = 0; i < (updateVar.catLength); i++) {
+                    svgElement[0][i]["cust-tooltip"] = this.viewModel.values[i].toolTipInfo;
+                }
+                this.endVisual(updateVar, evensvg, areafillheight, dataPoints, selection, options);
+                this.events.renderingFinished(options);
+            } catch (exception) {
+                this.events.renderingFailed(options, exception);
             }
-            updateVar.funnelTitleOnOffStatus = funnelTitleSettings.show;
-            titleText = funnelTitleSettings.titleText;
-            tooltiptext = funnelTitleSettings.tooltipText;
-            updateVar.titlefontsize = funnelTitleSettings.fontSize;
-            if (!updateVar.titlefontsize) updateVar.titlefontsize = 12;
-            if (updateVar.funnelTitleOnOffStatus && (titleText || tooltiptext)) {
-                let titleTextProperties: TextProperties = { fontFamily: "Segoe UI,wf_segoe-ui_normal,helvetica,arial,sans-serif", fontSize: `${updateVar.titlefontsize}pt`, text: titleText.toString() };
-                updateVar.titleHeight = textMeasurementService.measureSvgTextHeight(titleTextProperties);
-            } else updateVar.titleHeight = 0;
-            updateVar.fontsize = dataLabelSettings.fontSize;
-            let textProperties: TextProperties = { fontFamily: "Segoe UI,wf_segoe-ui_normal,helvetica,arial,sans-serif", fontSize: `${updateVar.fontsize}pt`, text: "MAQ Software" };
-            textHeight = textMeasurementService.measureSvgTextHeight(textProperties);
-            let totalTextHeight: number = updateVar.titleHeight + textHeight * 2;
-            updateVar.height = totalTextHeight > visualHeight ? totalTextHeight - visualHeight : visualHeight - totalTextHeight;
-            if (!this.viewModel.secondaryColumn) updateVar.height += (1.4 * updateVar.fontsize);
-            titlemargin = updateVar.titleHeight;
-            if (updateVar.titleHeight !== 0) {
-                this.root.append("div").style({ height: `${updateVar.titleHeight}px`, width: "100%" }).classed("hf_Title_Div", true);
-                this.root.select(".hf_Title_Div").append("div").style({ width: "100%" }).classed("hf_Title_Div_Text", true);
-                this.root.select(".hf_Title_Div_Text").classed("hf_title", true).style({ display: "inline-block" });
-                this.root.select(".hf_Title_Div_Text").classed("hf_title", true).style({ display: "inline-block" });
-            }
-            this.root.append("div").style({ "height": `${updateVar.height + 60}px`, "margin-bottom": "5px", "width": `${updateVar.parentWidth}px`, }).classed("hf_parentdiv", true);
-            element = this.root.select(".hf_parentdiv").append("div").classed("hf_svg hf_parentElement", true);
-            parentDiv = this.root.select(".hf_parentdiv"); showDefaultText = 1;
-            if (dataView && dataView.categorical && dataView.categorical.values) {
-                for (const iterator of dataView.categorical.values)
-                    if (iterator.source.roles && iterator.source.roles.hasOwnProperty("primaryMeasure")) showDefaultText = 0;
-            }
-            if (!dataView.categorical.categories || 1 === showDefaultText) {
-                let message: string;
-                message = 'Please select both "Series" and "Primary Measure" values';
-                parentDiv.append("div").text(message).attr("title", message).classed("hf_defaultText", true).style({ top: `${updateVar.height / 2.5}px` });
-            }
-            if (updateVar.labelSettings !== undefined && updateVar.labelSettings !== null) {
-                updateVar.displayunitValue = (updateVar.labelSettings.displayUnits ? updateVar.labelSettings.displayUnits : 0);
-                updateVar.displayunitValue2 = (updateVar.labelSettings.displayUnits ? updateVar.labelSettings.displayUnits : 0);
-                color = updateVar.labelSettings.labelColor; updateVar.fontsize = updateVar.labelSettings.fontSize;
-            }
-            titlecolor = funnelTitleSettings.color;
-            titlebgcolor = funnelTitleSettings.bkColor;
-            element = this.caseTilteHeight(viewport, updateVar, titleText, tooltiptext, titlecolor, titlebgcolor, showLegendProp, element, textProperties, color);
-            this.printerloop(showLegendProp, showConnectorsProp, element, color, updateVar);
-            this.visualoop(legendvalue, dataPoints, updateVar, sKMBValueY1Axis, textProperties, sKMBValueY2Axis);
-            this.visualoop2(updateVar, oddsvg, areafillheight);
-            let svgElement: d3.Selection<SVGAElement> = d3.selectAll(".hf_datapoint.hf_dataColor");
-            for (let i: number = 0; i < (updateVar.catLength); i++) {
-                svgElement[0][i]["cust-tooltip"] = this.viewModel.values[i].toolTipInfo;
-            }
-            this.endVisual(updateVar, evensvg, areafillheight,dataPoints,selection,options);
-            this.events.renderingFinished(options);
         }
 
 
@@ -1163,7 +1159,6 @@ module powerbi.extensibility.visual {
                 return legendSetting;
             }
             objects = dataView.metadata.objects;
-            // tslint:disable-next-line:no-any
             const legendProperties: any = horizontalFunnelProps;
             legendSetting.show =
                 DataViewObjects.getValue(objects, legendProperties.ShowLegend.show, legendSetting.show);
@@ -1187,7 +1182,6 @@ module powerbi.extensibility.visual {
                 return connectorsSetting;
             }
             objects = dataView.metadata.objects;
-            // tslint:disable-next-line:no-any
             const showConnectorsProps: any = horizontalFunnelProps;
             connectorsSetting.show =
                 DataViewObjects.getValue(objects, showConnectorsProps.ShowConnectors.show, connectorsSetting.show);
@@ -1214,7 +1208,6 @@ module powerbi.extensibility.visual {
                 return dataLabelSetting;
             }
             objects = dataView.metadata.objects;
-            // tslint:disable-next-line:no-any
             const labelProperties: any = horizontalFunnelProps.LabelSettings;
             dataLabelSetting.color =
                 DataViewObjects.getFillColor(objects, labelProperties.color, dataLabelSetting.color);
@@ -1266,7 +1259,6 @@ module powerbi.extensibility.visual {
             }
 
             objects = dataView.metadata.objects;
-            // tslint:disable-next-line:no-any
             const titleProps: any = horizontalFunnelProps.funnelTitle;
             fTitleSettings.show = DataViewObjects.getValue(objects, titleProps.show, fTitleSettings.show);
             fTitleSettings.titleText =
@@ -1298,7 +1290,6 @@ module powerbi.extensibility.visual {
                 return sortSettings;
             }
             objects = dataView.metadata.objects;
-            // tslint:disable-next-line:no-any
             const sortProps: any = horizontalFunnelProps.sort;
             sortSettings.sortBy = DataViewObjects.getValue(objects, sortProps.sortBy, sortSettings.sortBy);
             // Check if Secondary measure exists before selecting it
@@ -1308,7 +1299,6 @@ module powerbi.extensibility.visual {
                     && dataView.categorical
                     && dataView.categorical.values) {
                     let secondaryColumn: boolean = false;
-                    // tslint:disable-next-line: prefer-for-of
                     for (let iLoop: number = 0; iLoop < dataView.categorical.values.length; iLoop++) {
                         if (dataView.categorical.values[iLoop].source
                             && dataView.categorical.values[iLoop].source.roles
@@ -1423,9 +1413,7 @@ module powerbi.extensibility.visual {
             };
         }
 
-        // tslint:disable-next-line:no-any
         public getDefaultLabelSettings(show: any, labelColor: any, labelPrecision: any, format: any): {
-            // tslint:disable-next-line:no-any
             show: any;
             position: number;
             displayUnits: number;
@@ -1458,7 +1446,6 @@ module powerbi.extensibility.visual {
         }
 
         // This function is to trim numbers if it exceeds number of digits.
-        // tslint:disable-next-line:no-any
         public trimString(sValue: any, iNumberOfDigits: number): string {
             if (null === sValue) {
                 return "null";
@@ -1481,7 +1468,6 @@ module powerbi.extensibility.visual {
 
             // convert to decimal and change luminosity
             let rgb: string = "#";
-            // tslint:disable-next-line:no-any
             let c: any;
             let i: number;
             for (i = 0; i < 3; i++) {
@@ -1494,7 +1480,6 @@ module powerbi.extensibility.visual {
         }
 
         private enumerateDataPoints(enumeration: VisualObjectInstance[]): void {
-            // tslint:disable-next-line:no-any
             const data: any = this.viewModel.categories;
             if (!data) {
                 return;
@@ -1573,7 +1558,6 @@ module powerbi.extensibility.visual {
         }
 
         // method to set opacity based on the selections in visual
-        // tslint:disable-next-line:no-any
         private syncSelectionState(selection: any, selectionIds?: ISelectionId[]): void {
             const self: this = this;
 
