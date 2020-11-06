@@ -97,6 +97,23 @@
 				}
 			}
 		},
+		"backgroundColor": {
+			"displayName": "Background color",
+			"description": "Display visual background color",
+			"properties": {
+				"fill": {
+					"type": {
+						"fill": {
+							"solid": {
+								"color": {
+									"nullable": true
+								}
+							}
+						}
+					}
+				}
+			}
+		},
 		"labels": {
 			"displayName": "Data labels",
 			"description": "Display data label options",

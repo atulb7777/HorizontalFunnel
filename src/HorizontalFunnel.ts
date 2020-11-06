@@ -133,6 +133,9 @@ module powerbi.extensibility.visual {
         decimalPlaces: number;
         fontSize: number;
     }
+    interface IBackgroundSettings {
+        color: string;
+    }
 
     interface IFunnelTitle {
         show: boolean;
@@ -188,6 +191,9 @@ module powerbi.extensibility.visual {
                 objectName: "labels",
                 propertyName: "labelPrecision"
             }
+        },
+        backgroundColor: {
+            color: <DataViewObjectPropertyIdentifier> {objectName: "backgroundColor", propertyName: "fill"}
         },
         ShowConnectors: {
             show: <DataViewObjectPropertyIdentifier>{ objectName: "ShowConnectors", propertyName: "show" }
@@ -273,101 +279,102 @@ module powerbi.extensibility.visual {
                 values: []
             };
         }
-        private static visPrint(categories, series, cat, formatStringProp, categorical, viewModel, xAxisSortedValues, yAxis1SortedValues, catDv, yvalueIndex, yAxis2SortedValues, host, unsortcategoriesvalues, objects, unsortindex, unsortcategories) {
-            if (categories && series && categories.length > 0 && series.length > 0) {
-                let categorySourceFormatString: string;
-                categorySourceFormatString = valueFormatter.getFormatString(cat.source, formatStringProp);
-                let toolTipItems: any;
-                toolTipItems = [];
-                let formattedCategoryValue: any;
-                let value: any;
-                let categoryColumn: DataViewCategoryColumn;
-                categoryColumn = categorical.categories[0];
-                let catLength: number;
-                catLength = xAxisSortedValues.length;
-                for (let iLoop: number = 0; iLoop < catLength; iLoop++) {
-                    toolTipItems = [];
-                    if (iLoop !== 0) {
-                        viewModel.push({ toolTipInfo: [] });
-                    }
-                    viewModel[0].categories.push({
-                        color: "", value: xAxisSortedValues[iLoop]
-                    });
-                    let decimalPlaces: number = HorizontalFunnel.GETDECIMALPLACECOUNT(yAxis1SortedValues[iLoop]);
-                    decimalPlaces = decimalPlaces > 4 ? 4 : decimalPlaces;
-                    let primaryFormat: string;
-                    primaryFormat = series && series[0] && series[0].source && series[0].source.format ? series[0].source.format : "";
-                    let formatter: IValueFormatter;
-                    formatter = valueFormatter.create({
-                        format: primaryFormat, precision: decimalPlaces, value: 0
-                    });
-                    formattedCategoryValue = valueFormatter.format(xAxisSortedValues[iLoop], categorySourceFormatString);
-                    let tooltipInfo: ITooltipDataItem[] = [];
-                    let tooltipItem1: ITooltipDataItem = { displayName: "", value: "" };
-                    let tooltipItem2: ITooltipDataItem = { displayName: "", value: "" };
-                    tooltipItem1.displayName = catDv.categories["0"].source.displayName;
-                    tooltipItem1.value = formattedCategoryValue;
-                    tooltipInfo.push(tooltipItem1);
-                    tooltipItem2.displayName = catDv.values["0"].source.displayName;
-                    let formattedTooltip: string = formatter.format(Math.round(yAxis1SortedValues[iLoop] * 100) / 100);
-                    tooltipItem2.value = formattedTooltip;
-                    tooltipInfo.push(tooltipItem2);
-                    value = Math.round(yAxis1SortedValues[iLoop] * 100) / 100;
-                    viewModel[0].values.push({ values: [] });
-                    viewModel[0].values[iLoop].values.push(value);
-                    if (yvalueIndex !== undefined) {
-                        value = yAxis2SortedValues[iLoop];
-                        viewModel[0].values[iLoop].values.push(value);
-                    }
-                    viewModel[iLoop].toolTipInfo = tooltipInfo;
-                    let x: any = viewModel[0].values[iLoop];
-                    x.toolTipInfo = tooltipInfo;
-                }
-                let colorPalette: IColorPalette;
-                colorPalette = host.colorPalette;
-                // create object for colors
-                let colorObj: {} = {};
-                for (let i: number = 0; i < catLength; i++) {
-                    let currentElement: string = categoryColumn.values[i].toString();
-                    let defaultColor: Fill;
-                    defaultColor = {
-                        solid: {
-                            color: colorPalette.getColor(currentElement).value
-                        }
-                    };
-                    colorObj[currentElement] = getCategoricalObjectValue<Fill>(
-                        categoryColumn, i, "dataPoint", "fill", defaultColor).solid.color;
-                }
-                for (let iLoop: number = 0; iLoop < catLength; iLoop++) {
-                    for (let unLoop: number = 0; unLoop < catLength; unLoop++) {
-                        if (unsortcategoriesvalues[unLoop] === xAxisSortedValues[iLoop]) {
-                            objects = categoryColumn.objects && categoryColumn.objects[unLoop];
-                            let dataPointObject: any;
-                            if (objects) {
-                                dataPointObject = categoryColumn.objects[unLoop];
-                            }
-                            let color: any;
-                            if (objects && dataPointObject && dataPointObject.dataPoint && dataPointObject.dataPoint.fill && dataPointObject.dataPoint.fill.solid.color) {
-                                color = { value: dataPointObject.dataPoint.fill.solid.color };
-                            } else {
-                                let currentElement: string;
-                                const colorPlt: any = colorPalette;
-                                currentElement = categoryColumn.values[iLoop].toString();
-                                color = colorPlt.colorPalette[currentElement];
-                            }
-                            unsortindex = unLoop;
-                            let categorySelectionId: ISelectionId;
-                            categorySelectionId = host.createSelectionIdBuilder()
-                                .withCategory(unsortcategories, unsortindex).createSelectionId();
-                            viewModel[iLoop].identity = categorySelectionId;
-                            viewModel[0].categories[iLoop].identity = categorySelectionId;
-                            viewModel[0].categories[iLoop].color = color;
-                            break;
-                        }
-                    }
-                }
-                viewModel[0].count = catLength;
-            }
+        private static visPrint(categories, series, cat, formatStringProp, categorical, viewModel, xAxisSortedValues, yAxis1SortedValues, catDv, yvalueIndex, yAxis2SortedValues, host, unsortcategoriesvalues, objects, unsortindex, unsortcategories) {	
+            if (categories && series && categories.length > 0 && series.length > 0) {	
+                let categorySourceFormatString: string;	
+                categorySourceFormatString = valueFormatter.getFormatString(cat.source, formatStringProp);	
+                let toolTipItems: any;	
+                toolTipItems = [];	
+                let toolTipCategories: any;	
+                toolTipCategories = JSON.parse(JSON.stringify(xAxisSortedValues));	
+                let value: any;	
+                let categoryColumn: DataViewCategoryColumn;	
+                categoryColumn = categorical.categories[0];	
+                let catLength: number;	
+                catLength = xAxisSortedValues.length;	
+                let dformat:any;	
+                categorical.categories.forEach(element => {	
+                    if (element.source.roles.Category) {	
+                        dformat = valueFormatter.create({	
+                            format: element.source.format	
+                        });	 } });	
+                for (let iLoop: number = 0; iLoop < catLength; iLoop++) {	
+                    toolTipItems = [];	
+                    if (iLoop !== 0) {	viewModel.push({ toolTipInfo: [] });}	
+                    viewModel[0].categories.push({	color: "", value: xAxisSortedValues[iLoop] });	
+                    let decimalPlaces: number = HorizontalFunnel.GETDECIMALPLACECOUNT(yAxis1SortedValues[iLoop]);	
+                    decimalPlaces = decimalPlaces > 4 ? 4 : decimalPlaces;	
+                    let primaryFormat: string;	
+                    primaryFormat = series && series[0] && series[0].source && series[0].source.format ? series[0].source.format : "";	
+                    let formatter: IValueFormatter;	
+                    formatter = valueFormatter.create({	format: primaryFormat, precision: decimalPlaces, value: 0});	
+                    if (dformat && categorical.categories[0].source.format !== "0" && categorical.categories[0].source.format) {	
+                        let index: number;	
+                        for(index=0;index<toolTipCategories.length;index++){	
+                            toolTipCategories[index] = dformat.format(new Date(toolTipCategories[index]))	
+                        };}	
+                    let tooltipInfo: ITooltipDataItem[] = [];	
+                    let tooltipItem1: ITooltipDataItem = { displayName: "", value: "" };	
+                    let tooltipItem2: ITooltipDataItem = { displayName: "", value: "" };	
+                    tooltipItem1.displayName = catDv.categories["0"].source.displayName;	
+                    tooltipItem1.value = toolTipCategories[iLoop];	
+                    tooltipInfo.push(tooltipItem1);	
+                    tooltipItem2.displayName = catDv.values["0"].source.displayName;	
+                    let formattedTooltip: string = formatter.format(Math.round(yAxis1SortedValues[iLoop] * 100) / 100);	
+                    tooltipItem2.value = formattedTooltip;	
+                    tooltipInfo.push(tooltipItem2);	
+                    value = Math.round(yAxis1SortedValues[iLoop] * 100) / 100;	
+                    viewModel[0].values.push({ values: [] });	
+                    viewModel[0].values[iLoop].values.push(value);	
+                    if (yvalueIndex !== undefined) {	
+                        value = yAxis2SortedValues[iLoop];	
+                        viewModel[0].values[iLoop].values.push(value);	
+                    }	
+                    viewModel[iLoop].toolTipInfo = tooltipInfo;	
+                    let x: any = viewModel[0].values[iLoop];	
+                    x.toolTipInfo = tooltipInfo;	
+                }	
+                let colorPalette: IColorPalette;	
+                colorPalette = host.colorPalette;	
+                // create object for colors	
+                let colorObj: {} = {};	
+                for (let i: number = 0; i < catLength; i++) {	
+                    let currentElement: string = categoryColumn.values[i].toString();	
+                    let defaultColor: Fill;	
+                    defaultColor = {	
+                        solid: {	color: colorPalette.getColor(currentElement).value	 }	
+                    };	
+                    colorObj[currentElement] = getCategoricalObjectValue<Fill>(	
+                        categoryColumn, i, "dataPoint", "fill", defaultColor).solid.color;	
+                }	
+                for (let iLoop: number = 0; iLoop < catLength; iLoop++) {	
+                    for (let unLoop: number = 0; unLoop < catLength; unLoop++) {	
+                        if (unsortcategoriesvalues[unLoop] === xAxisSortedValues[iLoop]) {	
+                            objects = categoryColumn.objects && categoryColumn.objects[unLoop];	
+                            let dataPointObject: any;	
+                            if (objects) {	
+                                dataPointObject = categoryColumn.objects[unLoop];	
+                            }	
+                            let color: any;	
+                            if (objects && dataPointObject && dataPointObject.dataPoint && dataPointObject.dataPoint.fill && dataPointObject.dataPoint.fill.solid.color) {	
+                                color = { value: dataPointObject.dataPoint.fill.solid.color };	
+                            } else {	
+                                let currentElement: string;	
+                                const colorPlt: any = colorPalette;	
+                                currentElement = categoryColumn.values[iLoop].toString();	
+                                color = colorPlt.colorPalette[currentElement];	
+                            }	
+                            unsortindex = unLoop;	
+                            let categorySelectionId: ISelectionId;	
+                            categorySelectionId = host.createSelectionIdBuilder()	
+                                .withCategory(unsortcategories, unsortindex).createSelectionId();	
+                            viewModel[iLoop].identity = categorySelectionId;	
+                            viewModel[0].categories[iLoop].identity = categorySelectionId;	
+                            viewModel[0].categories[iLoop].color = color;	
+                            break;	
+                        }}}	
+                viewModel[0].count = catLength;	
+            }	
         }
         private static visualPrinter(caseVar, catVal, arrTextValuesSortIndexes, categorical, arrTempYAxisValues1, arrTempXAxisValues, viewModel, unsortsecondaryvalues, order) {
             if (caseVar.iTotalXAxisNumericValues) {
@@ -471,21 +478,29 @@ module powerbi.extensibility.visual {
             }
         }
         //AK47
-        private static caseSeries(order, catVal, categorical, targetvalueIndex, yvalueIndex, viewModel, index) {
-            if (order === "ascending") catVal.xAxisSortedValues = categorical.categories[0].values.sort(d3.ascending);
-            else catVal.xAxisSortedValues = categorical.categories[0].values.sort(d3.descending);
-            for (const iCount of catVal.xAxisSortedValues) {
-                const temp: any = iCount;
-                for (index = 0; index < catVal.unsortcategoriesvalues.length; index++) {
-                    if (temp === catVal.unsortcategoriesvalues[index]) {
-                        catVal.yAxis1SortedValues.push(categorical.values[targetvalueIndex].values[index]);
-                        if (viewModel[0].secondaryColumn) {
-                            catVal.yAxis2SortedValues.push(categorical.values[yvalueIndex].values[index]);
+        private static caseSeries(order, catVal, categorical, viewModel) {
+            let iIterator:number;
+            let jIterator:number;
+            if (viewModel[0].secondaryColumn) 
+            catVal.yAxis2SortedValues = JSON.parse(JSON.stringify(categorical.values[1].values));
+            for (iIterator = 0; iIterator < catVal.unsortcategoriesvalues.length; iIterator++){
+                for (jIterator = 0; jIterator < catVal.unsortcategoriesvalues.length; jIterator++){
+                    if (catVal.unsortcategoriesvalues[iIterator] < catVal.unsortcategoriesvalues[jIterator]){
+                        [catVal.unsortcategoriesvalues[iIterator],catVal.unsortcategoriesvalues[jIterator]] = [catVal.unsortcategoriesvalues[jIterator],catVal.unsortcategoriesvalues[iIterator]];
+                        [catVal.unsorttargetvalues[iIterator], catVal.unsorttargetvalues[jIterator]] = [catVal.unsorttargetvalues[jIterator], catVal.unsorttargetvalues[iIterator]];
+                            if (viewModel[0].secondaryColumn) {
+                                [catVal.yAxis2SortedValues[iIterator],catVal.yAxis2SortedValues[jIterator]] = [catVal.yAxis2SortedValues[jIterator],catVal.yAxis2SortedValues[iIterator]];
                         }
-                        break;
                     }
                 }
             }
+            if(order === "descending"){
+                catVal.unsorttargetvalues.reverse();
+                catVal.unsortcategoriesvalues.reverse();
+                catVal.yAxis2SortedValues.reverse();
+            }
+            catVal.xAxisSortedValues = JSON.parse(JSON.stringify(catVal.unsortcategoriesvalues));
+            catVal.yAxis1SortedValues = JSON.parse(JSON.stringify(catVal.unsorttargetvalues));
         }
         private static casePrimaryMeasure(order, index, catVal, categorical, targetvalueIndex, unsortsecondaryvalues, viewModel) {
             if (order === "ascending") catVal.yAxis1SortedValues = catVal.unsorttargetvalues.sort(d3.ascending);
@@ -514,8 +529,10 @@ module powerbi.extensibility.visual {
             order: string,
             host: IVisualHost): IFunnelViewModel[] {
             let viewModel: IFunnelViewModel[];
+            let categorical: DataViewCategorical;
             viewModel = [];
             viewModel.push(HorizontalFunnel.GETDEFAULTDATA());
+            let dformat: IValueFormatter;
             if (dataView) {
                 let objects: DataViewObjects = dataView.metadata.objects;
                 let targetvalueIndex: number;
@@ -524,6 +541,7 @@ module powerbi.extensibility.visual {
                     viewModel[0].count = -1;
                     return viewModel;
                 }
+
                 for (let iLoop: number = 0; iLoop < dataView.categorical.values.length; iLoop++) {
                     if (dataView.categorical.values[iLoop].source.roles && dataView.categorical.values[iLoop].source.roles.hasOwnProperty("primaryMeasure")) {
                         targetvalueIndex = iLoop;
@@ -531,17 +549,20 @@ module powerbi.extensibility.visual {
                     } else if (dataView.categorical.values[iLoop].source.roles && dataView.categorical.values[iLoop].source.roles.hasOwnProperty("secondaryMeasure")) {
                         yvalueIndex = iLoop;
                         viewModel[0].secondaryColumn = dataView.categorical.values[iLoop].source.displayName;
-                    }
-                }
+                    }}
                 if (targetvalueIndex !== undefined) {
-                    let categorical: DataViewCategorical;
                     categorical = dataView.categorical;
+                    categorical.categories.forEach(element => {
+                        if (element.source.roles.Category) {
+                            dformat = valueFormatter.create({
+                                format: element.source.format
+                            });
+                        }});
                     if (categorical) {
                         let unsortsecondaryvalues: any;
                         let catVal = {
                             unsortcategoriesvalues: JSON.parse(JSON.stringify(categorical.categories[0].values)), unsortcategories: categorical.categories[0], unsorttargetvalues: JSON.parse(JSON.stringify(categorical.values[targetvalueIndex].values)),
-                            unsortindex: 0, yAxis1SortedValues: [], yAxis2SortedValues: [], xAxisSortedValues: []
-                        }
+                            unsortindex: 0, yAxis1SortedValues: [], yAxis2SortedValues: [], xAxisSortedValues: []}
                         if (viewModel[0].secondaryColumn) unsortsecondaryvalues = JSON.parse(JSON.stringify(categorical.values[yvalueIndex].values));
                         switch (sort) {
                             case "Auto":
@@ -561,7 +582,7 @@ module powerbi.extensibility.visual {
                                 break;
                             case "Series":
                                 let index: number;
-                                this.caseSeries(order, catVal, categorical, targetvalueIndex, yvalueIndex, viewModel, index);//AK47
+                                this.caseSeries(order, catVal, categorical, viewModel);//AK47
                                 break;
                             case "PrimaryMeasure":
                                 this.casePrimaryMeasure(order, index, catVal, categorical, targetvalueIndex, unsortsecondaryvalues, viewModel); //AK47
@@ -598,6 +619,11 @@ module powerbi.extensibility.visual {
                             host, catVal.unsortcategoriesvalues, objects, catVal.unsortindex, catVal.unsortcategories);
                     }
                 }
+            }
+            if (dformat && categorical.categories[0].source.format != "0" && categorical.categories[0].source.format) {
+                viewModel[0].categories.forEach(value => {
+                    value.value = dformat.format(new Date(value.value))
+                });
             }
             return viewModel;
         }
@@ -642,7 +668,7 @@ module powerbi.extensibility.visual {
                 this.syncSelectionState(selection, <ISelectionId[]>this.selectionManager.getSelectionIds());
             });
         }
-        private printerloop(showLegendProp, showConnectorsProp, element, color, updateVar) {
+        private printerloop(showLegendProp, showConnectorsProp, element, color, updateVar, showBackground) {
             for (let i: number = 0; i < (2 * updateVar.catLength - 1); i++) {
                 if (!showLegendProp.show) {
                     let constantMultiplier: number = 1;
@@ -686,7 +712,7 @@ module powerbi.extensibility.visual {
                     element
                         .append("svg")
                         .attr({
-                            fill: "#FAFAFA",
+                            fill: showBackground.color,
                             height: updateVar.height,
                             id: i,
                             overflow: "hidden",
@@ -717,7 +743,7 @@ module powerbi.extensibility.visual {
                         element
                             .append("svg")
                             .attr({
-                                fill: "#FAFAFA",
+                                fill: showBackground.color,
                                 height: updateVar.height,
                                 id: i,
                                 overflow: "hidden",
@@ -861,7 +887,7 @@ module powerbi.extensibility.visual {
                 }
                 legendvalue = this.root.select(`.hf_legend_item${updateVar.legendpos}`);
                 if (this.viewModel.categories[i].value !== null && this.viewModel.categories[i].value !== "") {
-                    updateVar.title = dataPoints[i].toolTipInfo[0].value;
+                    updateVar.title = dataPoints[0].categories[i].value;
                     legendvalue.attr({ title: updateVar.title }).text(updateVar.title);
                 } else {
                     legendvalue.attr({ title: "(Blank)" }).text("(Blank)");
@@ -955,10 +981,10 @@ module powerbi.extensibility.visual {
                         let disp: number;
                         disp = 10;
                         if (updateVar.percentageVal[updateVar.index] === 0) {
-                            oddsvg.append("rect")
+                            oddsvg.append("rect")   
                                 .attr({
                                     height: updateVar.height,
-                                    width: updateVar.height,
+                                    width: updateVar.width,
                                     x: disp,
                                     y: 0,
                                 }).classed("hf_datapoint hf_dataColor", true);
@@ -1068,6 +1094,7 @@ module powerbi.extensibility.visual {
                     legendpos: 0, title: "", displayunitValue: 0, displayunitValue2: 0, maxLabel: 0, displayValue: "", classname: "", index: 0, y: 0, val: 1, prevyheight: 0, nextyheight: 0, dimension: ""
                 };
                 defaultDataPointColor = this.dataViewMeta(dataViewMetadata, updateVar, dataView, defaultDataPointColor);
+                let showBackground: IBackgroundSettings=this.getBackgroundSettings(this.dataView);
                 let showLegendProp: IShowLegendSettings = this.getLegendSettings(this.dataView), funnelTitleSettings: IFunnelTitle = this.getFunnelTitleSettings(this.dataView), showConnectorsProp: IShowConnectorsSettings = this.getConnectorsSettings(this.dataView), dataLabelSettings: ILabelSettings = this.getDataLabelSettings(this.dataView);
                 let sortSettings: ISortSettings = this.getSortSettings(this.dataView);
                 this.defaultDataPointColor = defaultDataPointColor;
@@ -1128,7 +1155,7 @@ module powerbi.extensibility.visual {
                 titlecolor = funnelTitleSettings.color;
                 titlebgcolor = funnelTitleSettings.bkColor;
                 element = this.caseTilteHeight(viewport, updateVar, titleText, tooltiptext, titlecolor, titlebgcolor, showLegendProp, element, textProperties, color);
-                this.printerloop(showLegendProp, showConnectorsProp, element, color, updateVar);
+                this.printerloop(showLegendProp, showConnectorsProp, element, color, updateVar, showBackground);
                 this.visualoop(legendvalue, dataPoints, updateVar, sKMBValueY1Axis, textProperties, sKMBValueY2Axis);
                 this.visualoop2(updateVar, oddsvg, areafillheight);
                 let svgElement: d3.Selection<SVGAElement> = d3.selectAll(".hf_datapoint.hf_dataColor");
@@ -1198,7 +1225,23 @@ module powerbi.extensibility.visual {
                 fontSize: 12
             };
         }
-
+        public getDefaultBackgroundSettings(): IBackgroundSettings{
+            return {
+                color: "#FFFFFF"
+            };
+        }
+        public getBackgroundSettings(dataView: DataView): IBackgroundSettings {
+            let objects : DataViewObjects = null;
+            let backgroundSetting: IBackgroundSettings;
+            backgroundSetting = this.getDefaultBackgroundSettings();
+            if(!dataView.metadata || !dataView.metadata.objects) {
+                return backgroundSetting;
+            }
+            objects = dataView.metadata.objects;
+            const backgroundProperties: any = horizontalFunnelProps.backgroundColor;
+            backgroundSetting.color = DataViewObjects.getFillColor(objects, backgroundProperties.color, backgroundSetting.color );
+            return backgroundSetting;
+        } 
         public getDataLabelSettings(dataView: DataView): ILabelSettings {
 
             let objects: DataViewObjects = null;
@@ -1328,7 +1371,8 @@ module powerbi.extensibility.visual {
             funnelTitleSettings = this.getFunnelTitleSettings(this.dataView);
             let sortSettings: ISortSettings;
             sortSettings = this.getSortSettings(this.dataView);
-
+            let backgroundSettings: IBackgroundSettings;
+            backgroundSettings = this.getBackgroundSettings(this.dataView);
             switch (options.objectName) {
                 case "FunnelTitle":
                     enumeration.push({
@@ -1345,7 +1389,16 @@ module powerbi.extensibility.visual {
                         selector: null,
                     });
                     break;
-
+                case "backgroundColor":
+                        enumeration.push({
+                            displayName: "Background color",
+                            objectName: "backgroundColor",
+                            properties: {
+                                fill: backgroundSettings.color
+                            },
+                            selector: null,
+                        });
+                        break;
                 case "Sort":
                     enumeration.push({
                         displayName: "Sort",
